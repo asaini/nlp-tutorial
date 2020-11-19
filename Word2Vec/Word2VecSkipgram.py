@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 
-def random_batch(skip_grams, voc_size):
+def random_batch(skip_grams, batch_size, voc_size):
     random_inputs = []
     random_labels = []
     random_index = np.random.choice(range(len(skip_grams)), batch_size, replace=False)
@@ -35,7 +35,7 @@ class Word2Vec(nn.Module):
         return output_layer
 
 
-def runner(sentences, batch_size=2, embedding_size=2):
+def word2vec_runner(sentences, batch_size=2, embedding_size=2):
     word_sequence = " ".join(sentences).split()
     word_list = " ".join(sentences).split()
     word_list = list(set(word_list))
@@ -57,7 +57,7 @@ def runner(sentences, batch_size=2, embedding_size=2):
 
     # Training
     for epoch in range(5000):
-        input_batch, target_batch = random_batch(skip_grams, voc_size)
+        input_batch, target_batch = random_batch(skip_grams, batch_size, voc_size)
         input_batch = torch.Tensor(input_batch)
         target_batch = torch.LongTensor(target_batch)
 
@@ -72,12 +72,13 @@ def runner(sentences, batch_size=2, embedding_size=2):
         loss.backward()
         optimizer.step()
 
+    fig, ax = plt.subplots()
     for i, label in enumerate(word_list):
         W, WT = model.parameters()
         x, y = W[0][i].item(), W[1][i].item()
-        plt.scatter(x, y)
-        plt.annotate(label, xy=(x, y), xytext=(5, 2), textcoords='offset points', ha='right', va='bottom')
-    return plt.Figure
+        ax.scatter(x, y)
+        ax.annotate(label, xy=(x, y), xytext=(5, 2), textcoords='offset points', ha='right', va='bottom')
+    return fig
 
 
 if __name__ == '__main__':
@@ -87,4 +88,5 @@ if __name__ == '__main__':
     sentences = ["apple banana fruit", "banana orange fruit", "orange banana fruit",
                  "dog cat animal", "cat monkey animal", "monkey dog animal"]
 
-    runner(sentences, batch_size, embedding_size)
+    fig = word2vec_runner(sentences, batch_size, embedding_size)
+    fig.show()
