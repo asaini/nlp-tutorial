@@ -5,8 +5,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
+import streamlit as st
 
-def random_batch():
+
+def random_batch(skip_grams, voc_size):
     random_inputs = []
     random_labels = []
     random_index = np.random.choice(range(len(skip_grams)), batch_size, replace=False)
@@ -17,9 +19,10 @@ def random_batch():
 
     return random_inputs, random_labels
 
+
 # Model
 class Word2Vec(nn.Module):
-    def __init__(self):
+    def __init__(self, voc_size, embedding_size):
         super(Word2Vec, self).__init__()
         # W and WT is not Traspose relationship
         self.W = nn.Linear(voc_size, embedding_size, bias=False) # voc_size > embedding_size Weight
@@ -31,13 +34,8 @@ class Word2Vec(nn.Module):
         output_layer = self.WT(hidden_layer) # output_layer : [batch_size, voc_size]
         return output_layer
 
-if __name__ == '__main__':
-    batch_size = 2 # mini-batch size
-    embedding_size = 2 # embedding size
 
-    sentences = ["apple banana fruit", "banana orange fruit", "orange banana fruit",
-                 "dog cat animal", "cat monkey animal", "monkey dog animal"]
-
+def runner(sentences, batch_size=2, embedding_size=2):
     word_sequence = " ".join(sentences).split()
     word_list = " ".join(sentences).split()
     word_list = list(set(word_list))
@@ -52,14 +50,14 @@ if __name__ == '__main__':
         for w in context:
             skip_grams.append([target, w])
 
-    model = Word2Vec()
+    model = Word2Vec(voc_size, embedding_size)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # Training
     for epoch in range(5000):
-        input_batch, target_batch = random_batch()
+        input_batch, target_batch = random_batch(skip_grams, voc_size)
         input_batch = torch.Tensor(input_batch)
         target_batch = torch.LongTensor(target_batch)
 
@@ -69,7 +67,7 @@ if __name__ == '__main__':
         # output : [batch_size, voc_size], target_batch : [batch_size] (LongTensor, not one-hot)
         loss = criterion(output, target_batch)
         if (epoch + 1) % 1000 == 0:
-            print('Epoch:', '%04d' % (epoch + 1), 'cost =', '{:.6f}'.format(loss))
+            st.write('Epoch:', '%04d' % (epoch + 1), 'cost =', '{:.6f}'.format(loss))
 
         loss.backward()
         optimizer.step()
@@ -79,4 +77,14 @@ if __name__ == '__main__':
         x, y = W[0][i].item(), W[1][i].item()
         plt.scatter(x, y)
         plt.annotate(label, xy=(x, y), xytext=(5, 2), textcoords='offset points', ha='right', va='bottom')
-    plt.show()
+    return plt.Figure
+
+
+if __name__ == '__main__':
+    batch_size = 2 # mini-batch size
+    embedding_size = 2 # embedding size
+
+    sentences = ["apple banana fruit", "banana orange fruit", "orange banana fruit",
+                 "dog cat animal", "cat monkey animal", "monkey dog animal"]
+
+    runner(sentences, batch_size, embedding_size)
